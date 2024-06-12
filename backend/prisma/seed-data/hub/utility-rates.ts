@@ -1,0 +1,80 @@
+export const utilityRates = [
+  {
+    site_id: 1,
+    utility_id: 1,
+    energy_charge_rate: 0.1010,
+    demand_charge_rate: 14.50,
+  },
+  {
+    site_id: 2,
+    utility_id: 2,
+    energy_charge_rate: 0.1010,
+    demand_charge_rate: 14.50,
+  },
+  {
+    site_id: 3,
+    utility_id: 3,
+    energy_charge_rate: 0.1010,
+    demand_charge_rate: 14.50,
+  },
+  {
+    site_id: 4,
+    utility_id: 1,
+    energy_charge_rate: 0.1010,
+    demand_charge_rate: 14.50,
+  },
+  {
+    site_id: 5,
+    utility_id: 2,
+    energy_charge_rate: 0.1010,
+    demand_charge_rate: 14.50,
+  },
+  {
+    site_id: 6,
+    utility_id: 1,
+    energy_charge_rate: 0.1010,
+    demand_charge_rate: 14.50,
+  },
+  {
+    site_id: 7,
+    utility_id: 4,
+    energy_charge_rate: 0.1010,
+    demand_charge_rate: 14.50,
+  },
+  {
+    site_id: 8,
+    utility_id: 1,
+    energy_charge_rate: 0.1010,
+    demand_charge_rate: 14.50,
+  },
+  {
+    site_id: 9,
+    utility_id: 5,
+    energy_charge_rate: 0.1010,
+    demand_charge_rate: 14.50,
+  },
+  {
+    site_id: 10,
+    utility_id: 5,
+    energy_charge_rate: 0.1010,
+    demand_charge_rate: 14.50,
+  },
+  {
+    site_id: 11,
+    utility_id: 5,
+    energy_charge_rate: 0.1010,
+    demand_charge_rate: 14.50,
+  },
+  {
+    site_id: 12,
+    utility_id: 1,
+    energy_charge_rate: 0.1010,
+    demand_charge_rate: 14.50,
+  },
+  {
+    site_id: 1,
+    utility_id: 1,
+    energy_charge_rate: 0.2010,
+    demand_charge_rate: 12.50,
+  },
+];

@@ -1,0 +1,22 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: 'SAM Template for Nested application resources
+
+  '
+Resources:
+  addUserToDatabase:
+    Type: AWS::Serverless::Application
+    Properties:
+      Location: https://s3.us-east-2.amazonaws.com/et-deployment-prod/3a5546697b84e32181413ddd2e5806d4.template
+      Parameters:
+        ApiId: aq93d0b8v9
+    Metadata:
+      SamResourceId: addUserToDatabase
+  getUserPermissions:
+    Type: AWS::Serverless::Application
+    Properties:
+      Location: https://s3.us-east-2.amazonaws.com/et-deployment-prod/0b308debc07fa24ab6f8178b21cbaf74.template
+      Parameters:
+        ApiId: aq93d0b8v9
+    Metadata:
+      SamResourceId: getUserPermissions

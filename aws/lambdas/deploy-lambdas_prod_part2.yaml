@@ -1,0 +1,38 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  SAM Template for Nested application resources
+Resources:
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  SAM Template for Nested application resources
+Resources:
+    addUserToDatabase:
+      Type: AWS::Serverless::Application
+      Properties:
+        Location: D:\WorkFolder\git\charging-demand-dashboard\aws\lambdas\addUserToDatabase\addUserToDatabase_prod.yaml
+        Parameters:
+          ApiId: aq93d0b8v9
+
+    getUserPermissions:
+      Type: AWS::Serverless::Application
+      Properties:
+        Location: D:\WorkFolder\git\charging-demand-dashboard\aws\lambdas\getUserPermissions\getUserPermissions_prod.yaml
+        Parameters:
+          ApiId: aq93d0b8v9
+
+
+
+
+
+
+
+
+
+
+
+
+     
+ 
+

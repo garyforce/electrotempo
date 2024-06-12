@@ -1,0 +1,8 @@
+__pycache__
+*~
+*.o
+*.txt
+./*.csv
+*/trips.csv
+simulate
+outputs

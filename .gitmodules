@@ -1,0 +1,6 @@
+[submodule "simulation/DynusT-Parser"]
+	path = simulation/DynusT-Parser
+	url = git@github.com:ElectroTempo/DynusT-Parser.git
+[submodule "simulation/Charging-Demand"]
+	path = simulation/Charging-Demand
+	url = git@github.com:ElectroTempo/Charging-Demand.git

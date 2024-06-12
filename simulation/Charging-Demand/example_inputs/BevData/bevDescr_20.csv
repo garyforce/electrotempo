@@ -1,0 +1,4 @@
+bevName,totalRangeMiles,batteryCapacityKWh,marketFraction,cityCons_kWh_per_mile,hwyCons_kWh_per_mile
+BEV100,100,30.4,0.05,0.271,0.336
+BEV200,200,60.0,0.026,0.269,0.317
+BEV300,300,101.2,0.124,0.302,0.333

@@ -1,0 +1,1238 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions", "multiSchema", "views"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  extensions = [postgis(schema: "public")]
+  schemas    = ["et_prod", "et_hub", "et_auth"]
+}
+
+model acs_bg_result {
+  acs_metric_id      Int
+  acs_segment_id     Int
+  block_group_id     String      @db.VarChar(20)
+  metric_value       Decimal     @db.Decimal(60, 30)
+  inserted_by        String
+  inserted_timestamp DateTime    @default(now()) @db.Timestamp(6)
+  updated_by         String?
+  updated_timestamp  String?     @db.VarChar
+  active             Boolean     @default(true)
+  id                 Int         @id @default(autoincrement())
+  data_source_id     Int
+  acs_metric         acs_metric  @relation(fields: [acs_metric_id], references: [acs_metric_id], onDelete: NoAction, onUpdate: NoAction, map: "abr_metric_fk")
+  acs_segment        acs_segment @relation(fields: [acs_segment_id], references: [acs_segment_id], onDelete: NoAction, onUpdate: NoAction, map: "abr_segment_fk")
+  data_source        data_source @relation(fields: [data_source_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "acs_bg_result_data_source_fk")
+
+  @@schema("et_prod")
+}
+
+model acs_metric {
+  acs_metric_id      Int             @id
+  acs_metric_name    String          @db.VarChar(50)
+  acs_metric_desc    String?
+  acs_metric_unit    String          @db.VarChar(30)
+  inserted_by        String
+  inserted_timestamp DateTime        @default(now()) @db.Timestamp(6)
+  updated_by         String?
+  updated_timestamp  String?         @db.VarChar
+  active             Boolean         @default(true)
+  acs_bg_result      acs_bg_result[]
+
+  @@schema("et_prod")
+}
+
+model acs_segment {
+  acs_segment_id     Int             @id
+  acs_segment_name   String
+  acs_segment_desc   String?
+  inserted_by        String
+  inserted_timestamp DateTime        @default(now()) @db.Timestamp(6)
+  updated_by         String?
+  updated_timestamp  String?         @db.VarChar
+  active             Boolean         @default(true)
+  acs_bg_result      acs_bg_result[]
+
+  @@schema("et_prod")
+}
+
+model Territory {
+  id          Int                                            @id @default(autoincrement())
+  createdAt   DateTime                                       @default(now()) @map("created_at")
+  updatedAt   DateTime                                       @default(now()) @updatedAt @map("updated_at")
+  deletedAt   DateTime?                                      @map("deleted_at")
+  name        String                                         @db.VarChar(100)
+  area        Decimal                                        @db.Decimal(60, 30)
+  wkbGeometry Unsupported("public.geometry(geometry, 4326)") @map("wkb_geometry")
+
+  territoryBlockGroups TerritoryBlockGroup[]
+
+  @@map("territories")
+  @@schema("et_prod")
+}
+
+model TerritoryBlockGroup {
+  id                   Int                                             @id @default(autoincrement())
+  createdAt            DateTime                                        @default(now()) @map("created_at")
+  updatedAt            DateTime                                        @default(now()) @updatedAt @map("updated_at")
+  territoryId          Int                                             @map("territory_id")
+  blockGroupId         String                                          @map("block_group_id") @db.VarChar(20)
+  intersectPct         Decimal                                         @map("intersect_pct") @db.Decimal(31, 30)
+  intersectionArea     Decimal?                                        @map("intersection_area") @db.Decimal(60, 30)
+  intersectionGeometry Unsupported("public.geometry(geometry, 4326)")? @map("intersection_geometry")
+
+  territory Territory @relation(fields: [territoryId], references: [id])
+
+  @@unique([territoryId, blockGroupId])
+  @@map("territory_block_groups")
+  @@schema("et_prod")
+}
+
+model block_group {
+  block_group_id     String                                         @db.VarChar(20)
+  aland              Decimal                                        @db.Decimal(60, 30)
+  blkgrp_coordinates Unsupported("public.geometry(geometry, 4326)")
+  data_source_id     Int
+  active             Boolean                                        @default(true)
+  inserted_by        String
+  inserted_timestamp DateTime                                       @default(now()) @db.Timestamp(6)
+  updated_by         String?
+  updated_timestamp  String?                                        @db.VarChar
+  id                 Int                                            @id @default(autoincrement())
+  data_source        data_source                                    @relation(fields: [data_source_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "bg_src_fk")
+
+  @@index([block_group_id])
+  @@index([blkgrp_coordinates], map: "block_group_geom_idx", type: Gist)
+  @@schema("et_prod")
+}
+
+model block_group_demand {
+  block_group_id                String            @db.VarChar(20)
+  charging_strategy_id          Int
+  hour_id                       Int               @db.SmallInt
+  demand_kwh                    Decimal?          @db.Decimal(60, 30)
+  charging_demand_simulation_id Int?
+  inserted_by                   String
+  inserted_timestamp            DateTime          @default(now()) @db.Timestamp(6)
+  updated_by                    String?
+  updated_timestamp             String?           @db.VarChar
+  active                        Boolean           @default(true)
+  id                            Int               @id @default(autoincrement())
+  charging_strategy             charging_strategy @relation(fields: [charging_strategy_id], references: [charging_strategy_id], onDelete: NoAction, onUpdate: NoAction, map: "bdg_cs_fk")
+
+  @@index([block_group_id])
+  @@index([charging_demand_simulation_id], map: "block_group_demand_cds_id_idx")
+  @@schema("et_prod")
+}
+
+model charging_demand_simulation {
+  id                                    Int                                     @id(map: "charging_demand_simulation_pk") @default(autoincrement())
+  traffic_model_id                      Int
+  inserted_by                           String
+  inserted_timestamp                    DateTime                                @default(now()) @db.Timestamp(6)
+  updated_by                            String?
+  updated_timestamp                     String?                                 @db.VarChar
+  active                                Boolean                                 @default(true)
+  charging_demand_simulation_parameters charging_demand_simulation_parameters[]
+
+  @@schema("et_prod")
+}
+
+model charging_demand_simulation_parameters {
+  id                            Int                        @id(map: "charging_demand_simulation_parameters_pk") @default(autoincrement())
+  charging_demand_simulation_id Int
+  parameter_name                String
+  parameter_value               String
+  inserted_by                   String
+  inserted_timestamp            DateTime                   @default(now()) @db.Timestamp(6)
+  updated_by                    String?
+  updated_timestamp             String?                    @db.VarChar
+  active                        Boolean                    @default(true)
+  charging_demand_simulation    charging_demand_simulation @relation(fields: [charging_demand_simulation_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "charging_demand_simulation_parameters_fk")
+
+  @@schema("et_prod")
+}
+
+model charging_station {
+  id                      Int                                         @id @default(autoincrement())
+  charger_id              BigInt?
+  inserted_by             String
+  inserted_timestamp      DateTime                                    @default(now()) @db.Timestamp(6)
+  updated_by              String?
+  updated_timestamp       String?                                     @db.VarChar
+  active                  Boolean                                     @default(true)
+  l1ports                 BigInt?
+  l2ports                 BigInt?
+  access                  String?
+  street_address          String?
+  intersection_directions String?
+  zip                     String?
+  station_phone           String?
+  city                    String?
+  dcfastports             BigInt?
+  evnetwork               String?
+  evrenewablesource       String?
+  expecteddate            String?
+  facilitytype            String?
+  opendate                String?
+  ownertypecode           String?
+  state                   String?
+  stationname             String?
+  status                  String?
+  evconnectortypes        String?
+  coordinates             Unsupported("public.geometry(Point, 4326)")
+
+  @@schema("et_prod")
+}
+
+model charging_station_bg_avail_power {
+  chargerID          BigInt?
+  blockGroupID       String?
+  weight             Float?
+  availablePower_l1  Float?    @map("availablePower-l1")
+  availablePower_l2  Float?    @map("availablePower-l2")
+  availablePower_dc  BigInt?   @map("availablePower-dc")
+  weighted_ap_l1     Float?    @map("weighted-ap-l1")
+  weighted_ap_l2     Float?    @map("weighted-ap-l2")
+  weighted_ap_dc     Float?    @map("weighted-ap-dc")
+  inserted_by        String?
+  inserted_timestamp DateTime? @db.Timestamp(6)
+  updated_by         String?
+  updated_timestamp  DateTime? @db.Timestamp(6)
+  id                 String    @id(map: "charging_station_bg_avail_power_pk") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+
+  @@schema("et_prod")
+}
+
+model charging_strategy {
+  charging_strategy_id   Int                  @id
+  charging_strategy_name String               @db.VarChar(30)
+  charging_strategy_desc String?
+  inserted_by            String
+  inserted_timestamp     DateTime             @default(now()) @db.Timestamp(6)
+  updated_by             String?
+  updated_timestamp      String?              @db.VarChar
+  active                 Boolean              @default(true)
+  block_group_demand     block_group_demand[]
+
+  @@schema("et_prod")
+}
+
+model data_source {
+  id                 Int             @id
+  name               String?
+  year               Int?
+  description        String?
+  retrieval_date     DateTime?       @db.Date
+  inserted_by        String
+  inserted_timestamp DateTime        @default(now()) @db.Timestamp(6)
+  updated_by         String?
+  updated_timestamp  String?         @db.VarChar
+  active             Boolean         @default(true)
+  acs_bg_result      acs_bg_result[]
+  block_group        block_group[]
+  substation         substation[]
+
+  @@schema("et_prod")
+}
+
+model EvGrowthScenario {
+  id                 Int       @id @default(autoincrement())
+  name               String
+  description        String
+  active             Boolean   @default(true)
+  inserted_by        String
+  inserted_timestamp DateTime  @default(now()) @db.Timestamp(6)
+  updated_by         String?
+  updated_timestamp  DateTime? @db.Timestamp(6)
+  owner              Int
+  context            Json?
+
+  HubScenario HubScenario[]
+
+  @@map("ev_growth_scenario")
+  @@schema("et_prod")
+}
+
+model EvGrowthScenarioAnnualData {
+  id                                       Int       @id @default(autoincrement())
+  growth_scenario_simulation_parameters_id Int
+  scale_year                               Int
+  year                                     Int
+  count_of_all_vehicles                    BigInt
+  count_of_all_vehicles_bought             BigInt
+  ev_fraction_of_sales                     Decimal   @db.Decimal(5, 4)
+  ev_fraction_of_all_vehicles              Decimal   @db.Decimal(5, 4)
+  num_evs                                  BigInt
+  ice_fraction_of_all_vehicles             Decimal   @db.Decimal(5, 4)
+  num_of_remaining_ice                     BigInt
+  active                                   Boolean   @default(true)
+  inserted_by                              String
+  inserted_timestamp                       DateTime  @default(now()) @db.Timestamp(6)
+  updated_by                               String?
+  updated_timestamp                        DateTime? @db.Timestamp(6)
+
+  @@map("ev_growth_scenario_annual_data")
+  @@schema("et_prod")
+}
+
+model EvGrowthScenarioSimulationParameters {
+  id                              Int       @id @default(autoincrement())
+  ev_growth_scenario_id           Int
+  vehicle_class_id                Int
+  initial_num_vehicles            BigInt
+  ev_retrofit_rate                Decimal   @db.Decimal(5, 4)
+  vehicle_population_growth_rate  Decimal   @db.Decimal(5, 4)
+  scrappage_incentive_size_frac   Decimal?  @db.Decimal(5, 4)
+  target_year_market_share_frac   Decimal?  @db.Decimal(5, 4)
+  target_year                     Int
+  current_market_share_frac       Decimal?  @db.Decimal(5, 4)
+  final_market_share_frac         Decimal?  @db.Decimal(5, 4)
+  final_year                      Int
+  active                          Boolean   @default(true)
+  inserted_by                     String
+  inserted_timestamp              DateTime  @default(now()) @db.Timestamp(6)
+  updated_by                      String?
+  updated_timestamp               DateTime? @db.Timestamp(6)
+  scrappage_incentive_program     Boolean?
+  ev_retrofit_incentive_program   Boolean?
+  current_year                    Int?
+  start_year                      Int?
+  start_year_market_share_frac    Decimal?  @db.Decimal(5, 4)
+  scrappage_rate                  Decimal?  @db.Decimal(5, 4)
+  ev_retrofit_incentive_size_frac Decimal?  @db.Decimal(5, 4)
+
+  @@map("ev_growth_scenario_simulation_parameters")
+  @@schema("et_prod")
+}
+
+model Location {
+  id                 Int                                         @id @default(autoincrement())
+  name               String                                      @db.VarChar(50)
+  description        String?
+  state              String                                      @db.VarChar(30)
+  country            String                                      @db.VarChar(60)
+  center             Unsupported("public.geometry(Point, 4326)")
+  zoom               Int?
+  active             Boolean                                     @default(true)
+  api_id             String?
+  inserted_by        String
+  inserted_timestamp DateTime                                    @default(now()) @db.Timestamp(6)
+  updated_by         String?
+  updated_timestamp  String?                                     @db.VarChar
+  ev_insites_enabled Boolean                                     @default(false)
+
+  HubSite HubSite[]
+
+  @@map("location")
+  @@schema("et_prod")
+}
+
+model ngrid_depot {
+  state         String?
+  unique_id     Int?
+  depot_id      String?
+  depot_owner   String?
+  address1      String?
+  address2      String?
+  address3      String?
+  city          String?
+  zip           String?
+  business_name String?
+  naics_code    Int?
+  sic_code      String?
+  industry_type String?
+  count_11L     Float?                                       @map("11L_v_count")
+  count_21L     Float?                                       @map("21L_v_count")
+  count_31L     Float?                                       @map("31L_v_count")
+  count_31M     Float?                                       @map("31M_v_count")
+  count_32L     Float?                                       @map("32L_v_count")
+  count_32M     Float?                                       @map("32M_v_count")
+  count_41H     Float?                                       @map("41H_v_count")
+  count_41M     Float?                                       @map("41M_v_count")
+  count_42H     Float?                                       @map("42H_v_count")
+  count_42M     Float?                                       @map("42M_v_count")
+  count_43H     Float?                                       @map("43H_v_count")
+  count_43L     Float?                                       @map("43L_v_count")
+  count_43M     Float?                                       @map("43M_v_count")
+  count_51H     Float?                                       @map("51H_v_count")
+  count_51L     Float?                                       @map("51L_v_count")
+  count_51M     Float?                                       @map("51M_v_count")
+  count_52H     Float?                                       @map("52H_v_count")
+  count_52L     Float?                                       @map("52L_v_count")
+  count_52M     Float?                                       @map("52M_v_count")
+  count_53H     Float?                                       @map("53H_v_count")
+  count_53L     Float?                                       @map("53L_v_count")
+  count_53M     Float?                                       @map("53M_v_count")
+  count_54H     Float?                                       @map("54H_v_count")
+  count_54M     Float?                                       @map("54M_v_count")
+  count_61H     Float?                                       @map("61H_v_count")
+  count_61M     Float?                                       @map("61M_v_count")
+  count_62H     Float?                                       @map("62H_v_count")
+  count_62M     Float?                                       @map("62M_v_count")
+  geom          Unsupported("public.geometry(Point, 4326)")?
+  active        Boolean
+  id            String                                       @id(map: "ngrid_depot_pk") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+
+  @@schema("et_prod")
+}
+
+model ngrid_feeder {
+  state        String?
+  line_type    String?
+  phases       Int?                                                   @db.SmallInt
+  master_cdf   String?                                                @db.VarChar(25)
+  substation   String?                                                @db.VarChar(8000)
+  voltage__kv  Float?
+  shape_length Float?
+  shape        Unsupported("public.geometry(MultiLineString, 4326)")?
+  active       Boolean?
+  id           String                                                 @id(map: "ngrid_feeder_pk") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+
+  @@schema("et_prod")
+}
+
+model ngrid_feeder_demand {
+  state                      String?
+  master_cdf                 String? @db.VarChar(25)
+  simulation_year            Int?
+  unique_id                  Int?
+  location_id                String?
+  act_category               String? @db.VarChar
+  hourid                     Float?
+  total_vehicles             Float?
+  total_evs                  Float?
+  energy_demand_kwh_summer   Float?
+  energy_demand_kwh_winter   Float?
+  energy_demand_kwh_shoulder Float?
+  power_demand_kw_summer     Int
+  power_demand_kw_winter     Int
+  power_demand_kw_shoulder   Int
+  id                         String  @id(map: "ngrid_feeder_demand_pk") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+
+  @@index([hourid])
+  @@index([master_cdf])
+  @@index([simulation_year])
+  @@index([state])
+  @@schema("et_prod")
+}
+
+model site {
+  id                 Int                                            @id @default(autoincrement())
+  name               String
+  geom               Unsupported("public.geometry(geometry, 4326)")
+  score              Float?
+  extra              Json?
+  site_collection_id Int
+  active             Boolean                                        @default(true)
+  inserted_by        String
+  inserted_timestamp DateTime                                       @default(now()) @db.Timestamp(6)
+  updated_by         String?
+  updated_timestamp  DateTime?                                      @db.Timestamp(6)
+  site_collection    site_collection                                @relation(fields: [site_collection_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "site_fk")
+
+  @@schema("et_prod")
+}
+
+model site_collection {
+  id                 Int       @id @default(autoincrement())
+  name               String
+  source             String?
+  organization_id    Int
+  active             Boolean   @default(true)
+  inserted_by        String
+  inserted_timestamp DateTime  @default(now()) @db.Timestamp(6)
+  updated_by         String?
+  updated_timestamp  DateTime? @db.Timestamp(6)
+  site               site[]
+
+  @@schema("et_prod")
+}
+
+model substation {
+  id                 Int                                         @id
+  external_id        Int?
+  name               String?                                     @db.VarChar(54)
+  type               String?                                     @db.VarChar(13)
+  status             String?                                     @db.VarChar(18)
+  county_fips        String?                                     @db.VarChar(13)
+  latitude           Float?
+  longitude          Float?
+  num_lines          Int?
+  max_voltage        Int?
+  min_voltage        Int?
+  max_infer          String?                                     @db.VarChar(1)
+  min_infer          String?                                     @db.VarChar(1)
+  coordinates        Unsupported("public.geometry(Point, 4326)")
+  data_source_id     Int
+  inserted_by        String
+  inserted_timestamp DateTime                                    @default(now()) @db.Timestamp(6)
+  updated_by         String?
+  updated_timestamp  String?                                     @db.VarChar
+  active             Boolean                                     @default(true)
+  data_source        data_source                                 @relation(fields: [data_source_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "substation_fk")
+
+  @@index([coordinates], map: "substation_geom_idx", type: Gist)
+  @@schema("et_prod")
+}
+
+model traffic_model {
+  id                 Int      @id(map: "scenario_pkey") @default(autoincrement())
+  name               String
+  description        String?
+  model_year         Int      @default(2024)
+  location_id        Int
+  num_vehicles       Int?
+  model_type         String   @default("4step")
+  model_source       String   @default("Statewide")
+  inserted_by        String
+  inserted_timestamp DateTime @default(now()) @db.Timestamp(6)
+  updated_by         String?
+  updated_timestamp  String?  @db.VarChar
+  active             Boolean  @default(true)
+
+  @@schema("et_prod")
+}
+
+model vehicle_class {
+  vehicle_class_id   Int      @id @default(autoincrement())
+  name               String?
+  description        String?
+  inserted_by        String   @default("BATCH_INSERT")
+  inserted_timestamp DateTime @default(now()) @db.Timestamp(6)
+  updated_by         String?
+  updated_timestamp  String?  @db.VarChar
+  active             Boolean  @default(true)
+  act_category       Int?
+
+  @@schema("et_prod")
+}
+
+model VehicleType {
+  id                    String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name                  String
+  vehicleConfigurations VehicleConfiguration[]
+  iceReferenceCostUsd   Int                    @map("ice_reference_cost_usd")
+
+  active             Boolean  @default(true)
+  inserted_by        String
+  inserted_timestamp DateTime @default(now()) @db.Timestamp(6)
+  updated_by         String?
+  updated_timestamp  String?
+
+  @@map("vehicle_type")
+  @@schema("et_prod")
+}
+
+model VehicleConfiguration {
+  id                     String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name                   String
+  make                   String
+  model                  String
+  batteryCapacityKwh     Decimal     @map("battery_capacity_kwh")
+  batteryMaxChargeRateKw Decimal     @map("battery_max_charge_rate_kw")
+  priceUsd               Decimal     @map("price_usd")
+  vehicleType            VehicleType @relation(fields: [vehicleTypeId], references: [id])
+  vehicleTypeId          String      @map("vehicle_type_id") @db.Uuid
+
+  active             Boolean  @default(true)
+  inserted_by        String
+  inserted_timestamp DateTime @default(now()) @db.Timestamp(6)
+  updated_by         String?
+  updated_timestamp  String?
+
+  @@map("vehicle_configuration")
+  @@schema("et_prod")
+}
+
+model ChargerConfiguration {
+  id           String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name         String
+  make         String
+  model        String
+  chargeRateKw Decimal @map("charge_rate_kw")
+  voltage      Decimal
+  amperage     Decimal
+  priceUsd     Decimal @map("price_usd")
+
+  active             Boolean  @default(true)
+  inserted_by        String
+  inserted_timestamp DateTime @default(now()) @db.Timestamp(6)
+  updated_by         String?
+  updated_timestamp  String?
+
+  @@map("charger_configuration")
+  @@schema("et_prod")
+}
+
+////////// TERMINAL //////////
+
+model Property {
+  id             Int       @id @default(autoincrement())
+  uuid           String    @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @default(now()) @updatedAt @map("updated_at")
+  deletedAt      DateTime? @map("deleted_at")
+  organizationId Int       @map("organization_id")
+  name           String    @db.VarChar(100)
+  externalId     String?   @map("external_id") @db.VarChar(100)
+  address        String    @db.VarChar(255)
+  lat            Float
+  lon            Float
+  utilityRateId  Int?      @map("utility_rate_id")
+
+  utilityRate UtilityRate? @relation(fields: [utilityRateId], references: [id])
+
+  terminalFacilities TerminalFacility[]
+  terminalScenarios  TerminalScenario[]
+
+  @@map("properties")
+  @@schema("et_prod")
+}
+
+model TerminalFacility {
+  id         Int       @id @default(autoincrement())
+  uuid       String    @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  createdAt  DateTime  @default(now()) @map("created_at")
+  updatedAt  DateTime  @default(now()) @updatedAt @map("updated_at")
+  deletedAt  DateTime? @map("deleted_at")
+  propertyId Int       @map("property_id")
+  name       String    @db.VarChar(100)
+
+  property Property @relation(fields: [propertyId], references: [id])
+
+  terminalScenarios TerminalScenario[]
+
+  @@map("terminal_facilities")
+  @@schema("et_prod")
+}
+
+model TerminalScenario {
+  id                               Int       @id @default(autoincrement())
+  uuid                             String    @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  createdAt                        DateTime  @default(now()) @map("created_at")
+  updatedAt                        DateTime  @default(now()) @updatedAt @map("updated_at")
+  deletedAt                        DateTime? @map("deleted_at")
+  userId                           Int?      @map("user_id")
+  propertyId                       Int       @map("property_id")
+  facilityId                       Int       @map("facility_id")
+  name                             String    @db.VarChar(100)
+  planningHorizonYears             Int       @map("planning_horizon_years")
+  chargerCost                      Int?      @map("charger_cost")
+  vehicleCost                      Int?      @map("vehicle_cost")
+  installationCost                 Int?      @map("installation_cost")
+  numChargers                      Int       @default(0) @map("num_chargers")
+  chargerId                        Int?      @map("charger_id")
+  optNumChargers                   Int       @default(0) @map("opt_num_chargers")
+  active                           Boolean   @default(false)
+  statusId                         Int?      @map("status_id")
+  statusUpdatedAt                  DateTime? @map("status_updated_at")
+  utilityRateId                    Int?      @map("utility_rate_id")
+  chargerMaintenanceCostPct        Decimal   @default(0.05) @map("charger_maintenance_cost_pct") @db.Decimal(3, 2)
+  chargerReplacementLifecycleYears Int       @default(0) @map("charger_replacement_lifecycle_years")
+  iceFuelCostPerGallon             Decimal   @default(4) @map("ice_fuel_cost_per_gallon") @db.Decimal(32, 2)
+
+  charger     Charger?                @relation(fields: [chargerId], references: [id])
+  facility    TerminalFacility        @relation(fields: [facilityId], references: [id])
+  property    Property                @relation(fields: [propertyId], references: [id])
+  status      TerminalScenarioStatus? @relation(fields: [statusId], references: [id])
+  utilityRate UtilityRate?            @relation(fields: [utilityRateId], references: [id])
+
+  scenarioVehicles   TerminalScenarioVehicle[]
+  customChargers     Charger[]                 @relation("customChargers")
+  customUtilityRates UtilityRate[]             @relation("customUtilityRates")
+
+  @@map("terminal_scenarios")
+  @@schema("et_prod")
+}
+
+model TerminalScenarioStatus {
+  id     Int    @id @default(autoincrement())
+  uuid   String @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  status String @db.VarChar(50)
+
+  terminalScenarios TerminalScenario[]
+
+  @@map("terminal_scenario_statuses")
+  @@schema("et_prod")
+}
+
+model TerminalScenarioVehicle {
+  id                               Int       @id @default(autoincrement())
+  uuid                             String    @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  createdAt                        DateTime  @default(now()) @map("created_at")
+  updatedAt                        DateTime  @default(now()) @updatedAt @map("updated_at")
+  deletedAt                        DateTime? @map("deleted_at")
+  scenarioId                       Int       @map("scenario_id")
+  vehicleTypeId                    Int       @map("vehicle_type_id")
+  iceVehicleId                     Int?      @map("ice_vehicle_id")
+  evVehicleId                      Int?      @map("ev_vehicle_id")
+  energyConsumptionLevelId         Int?      @map("energy_consumption_level_id")
+  fleetSize                        Int       @default(0) @map("fleet_size")
+  vehiclesPerShift                 Int       @default(0) @map("vehicles_per_shift")
+  numICEVehicles                   Int       @default(0) @map("num_ice_vehicles")
+  numICEVehiclesToElectrify        Int       @default(0) @map("num_ice_vehicles_to_electrify")
+  vehicleMaintenanceCostPct        Decimal   @default(0.05) @map("vehicle_maintenance_cost_pct") @db.Decimal(3, 2)
+  vehicleReplacementLifecycleYears Int       @default(0) @map("vehicle_replacement_lifecycle_years")
+  batteryReplacementLifecycleYears Int       @default(0) @map("battery_replacement_lifecycle_years")
+  iceFuelConsumption               Decimal   @default(0) @map("ice_fuel_consumption") @db.Decimal(32, 2)
+  iceDowntimePct                   Decimal   @default(0.34) @map("ice_downtime_pct") @db.Decimal(3, 2)
+  evDowntimePct                    Decimal   @default(0.2) @map("ev_downtime_pct") @db.Decimal(3, 2)
+  evReserve                        Int       @default(0) @map("ev_reserve")
+  shiftSchedule                    Int[]     @default([1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]) @map("shift_schedule")
+
+  scenario               TerminalScenario        @relation(fields: [scenarioId], references: [id])
+  vehicleType            VehicleTypes            @relation(fields: [vehicleTypeId], references: [id])
+  iceVehicle             Vehicle?                @relation("iceVehicle", fields: [iceVehicleId], references: [id])
+  evVehicle              Vehicle?                @relation("evVehicle", fields: [evVehicleId], references: [id])
+  energyConsumptionLevel EnergyConsumptionLevel? @relation(fields: [energyConsumptionLevelId], references: [id])
+
+  energyDemandDatapoints  TerminalEnergyDemandDatapoint[]
+  vehicleStatusDatapoints TerminalVehicleStatusDatapoint[]
+  customVehicles          Vehicle[]                        @relation("customVehicles")
+
+  @@map("terminal_scenario_vehicles")
+  @@schema("et_prod")
+}
+
+model TerminalEnergyDemandDatapoint {
+  id                Int       @id @default(autoincrement())
+  uuid              String    @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @default(now()) @updatedAt @map("updated_at")
+  deletedAt         DateTime? @map("deleted_at")
+  scenarioVehicleId Int       @map("scenario_vehicle_id")
+  hour              Int
+  energyDemandKwh   Decimal   @map("energy_demand_kwh") @db.Decimal(32, 2)
+  powerDemandKw     Decimal   @map("power_demand_kw") @db.Decimal(32, 2)
+
+  scenarioVehicle TerminalScenarioVehicle @relation(fields: [scenarioVehicleId], references: [id])
+
+  // @@unique([scenarioVehicleId, hour]) // where deleted_at is null
+  @@map("terminal_energy_demand_datapoints")
+  @@schema("et_prod")
+}
+
+model TerminalVehicleStatusDatapoint {
+  id                Int       @id @default(autoincrement())
+  uuid              String    @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @default(now()) @updatedAt @map("updated_at")
+  deletedAt         DateTime? @map("deleted_at")
+  scenarioVehicleId Int       @map("scenario_vehicle_id")
+  hour0             Int       @default(1) @map("hour_0")
+  hour1             Int       @default(1) @map("hour_1")
+  hour2             Int       @default(1) @map("hour_2")
+  hour3             Int       @default(1) @map("hour_3")
+  hour4             Int       @default(1) @map("hour_4")
+  hour5             Int       @default(1) @map("hour_5")
+  hour6             Int       @default(1) @map("hour_6")
+  hour7             Int       @default(1) @map("hour_7")
+  hour8             Int       @default(1) @map("hour_8")
+  hour9             Int       @default(1) @map("hour_9")
+  hour10            Int       @default(1) @map("hour_10")
+  hour11            Int       @default(1) @map("hour_11")
+  hour12            Int       @default(1) @map("hour_12")
+  hour13            Int       @default(1) @map("hour_13")
+  hour14            Int       @default(1) @map("hour_14")
+  hour15            Int       @default(1) @map("hour_15")
+  hour16            Int       @default(1) @map("hour_16")
+  hour17            Int       @default(1) @map("hour_17")
+  hour18            Int       @default(1) @map("hour_18")
+  hour19            Int       @default(1) @map("hour_19")
+  hour20            Int       @default(1) @map("hour_20")
+  hour21            Int       @default(1) @map("hour_21")
+  hour22            Int       @default(1) @map("hour_22")
+  hour23            Int       @default(1) @map("hour_23")
+
+  scenarioVehicle TerminalScenarioVehicle @relation(fields: [scenarioVehicleId], references: [id])
+  hour0Status     VehicleStatuses         @relation("hour0Status", fields: [hour0], references: [id])
+  hour1Status     VehicleStatuses         @relation("hour1Status", fields: [hour1], references: [id])
+  hour2Status     VehicleStatuses         @relation("hour2Status", fields: [hour2], references: [id])
+  hour3Status     VehicleStatuses         @relation("hour3Status", fields: [hour3], references: [id])
+  hour4Status     VehicleStatuses         @relation("hour4Status", fields: [hour4], references: [id])
+  hour5Status     VehicleStatuses         @relation("hour5Status", fields: [hour5], references: [id])
+  hour6Status     VehicleStatuses         @relation("hour6Status", fields: [hour6], references: [id])
+  hour7Status     VehicleStatuses         @relation("hour7Status", fields: [hour7], references: [id])
+  hour8Status     VehicleStatuses         @relation("hour8Status", fields: [hour8], references: [id])
+  hour9Status     VehicleStatuses         @relation("hour9Status", fields: [hour9], references: [id])
+  hour10Status    VehicleStatuses         @relation("hour10Status", fields: [hour10], references: [id])
+  hour11Status    VehicleStatuses         @relation("hour11Status", fields: [hour11], references: [id])
+  hour12Status    VehicleStatuses         @relation("hour12Status", fields: [hour12], references: [id])
+  hour13Status    VehicleStatuses         @relation("hour13Status", fields: [hour13], references: [id])
+  hour14Status    VehicleStatuses         @relation("hour14Status", fields: [hour14], references: [id])
+  hour15Status    VehicleStatuses         @relation("hour15Status", fields: [hour15], references: [id])
+  hour16Status    VehicleStatuses         @relation("hour16Status", fields: [hour16], references: [id])
+  hour17Status    VehicleStatuses         @relation("hour17Status", fields: [hour17], references: [id])
+  hour18Status    VehicleStatuses         @relation("hour18Status", fields: [hour18], references: [id])
+  hour19Status    VehicleStatuses         @relation("hour19Status", fields: [hour19], references: [id])
+  hour20Status    VehicleStatuses         @relation("hour20Status", fields: [hour20], references: [id])
+  hour21Status    VehicleStatuses         @relation("hour21Status", fields: [hour21], references: [id])
+  hour22Status    VehicleStatuses         @relation("hour22Status", fields: [hour22], references: [id])
+  hour23Status    VehicleStatuses         @relation("hour23Status", fields: [hour23], references: [id])
+
+  // @@unique([scenarioVehicleId, hour]) // where deleted_at is null
+  @@map("terminal_vehicle_status_datapoints")
+  @@schema("et_prod")
+}
+
+model Charger {
+  id                 Int       @id @default(autoincrement())
+  uuid               String    @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  createdAt          DateTime  @default(now()) @map("created_at")
+  updatedAt          DateTime  @default(now()) @updatedAt @map("updated_at")
+  deletedAt          DateTime? @map("deleted_at")
+  name               String?   @db.VarChar(100)
+  make               String?   @db.VarChar(100)
+  model              String?   @db.VarChar(100)
+  chargeRateKw       Decimal   @default(0) @map("charge_rate_kw") @db.Decimal(32, 2)
+  voltage            Decimal   @default(0) @db.Decimal(32, 2)
+  amperage           Decimal   @default(0) @db.Decimal(32, 2)
+  priceUsd           Decimal   @default(0) @map("price_usd") @db.Decimal(32, 2)
+  organizationId     Int?      @map("organization_id")
+  terminalScenarioId Int?      @map("terminal_scenario_id")
+
+  organization     Organization?     @relation(fields: [organizationId], references: [id])
+  terminalScenario TerminalScenario? @relation("customChargers", fields: [terminalScenarioId], references: [id])
+
+  terminalScenarios TerminalScenario[]
+
+  @@map("chargers")
+  @@schema("et_prod")
+}
+
+model Vehicle {
+  id                        Int        @id @default(autoincrement())
+  uuid                      String     @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  createdAt                 DateTime   @default(now()) @map("created_at")
+  updatedAt                 DateTime   @default(now()) @updatedAt @map("updated_at")
+  deletedAt                 DateTime?  @map("deleted_at")
+  name                      String?    @db.VarChar(100)
+  make                      String?    @db.VarChar(100)
+  model                     String?    @db.VarChar(100)
+  vehicleTypeId             Int        @map("vehicle_type_id")
+  batteryCapacityKwh        Decimal    @default(0) @map("battery_capacity_kwh") @db.Decimal(32, 2)
+  batteryMaxChargeRateKw    Decimal    @default(0) @map("battery_max_charge_rate_kw") @db.Decimal(32, 2)
+  priceUsd                  Decimal    @default(0) @map("price_usd") @db.Decimal(32, 2)
+  isEV                      Boolean    @default(true) @map("is_ev")
+  engineType                EngineType @default(ELECTRIC) @map("engine_type")
+  organizationId            Int?       @map("organization_id")
+  terminalScenarioVehicleId Int?       @map("terminal_scenario_vehicle_id")
+  buyAmericaCompliance      Boolean    @default(false) @map("buy_america_compliance")
+
+  vehicleType             VehicleTypes             @relation(fields: [vehicleTypeId], references: [id])
+  organization            Organization?            @relation(fields: [organizationId], references: [id])
+  terminalScenarioVehicle TerminalScenarioVehicle? @relation("customVehicles", fields: [terminalScenarioVehicleId], references: [id])
+
+  terminalScenarioICEVehicles TerminalScenarioVehicle[] @relation("iceVehicle")
+  terminalScenarioEVVehicles  TerminalScenarioVehicle[] @relation("evVehicle")
+
+  @@map("vehicles")
+  @@schema("et_prod")
+}
+
+model VehicleTypes {
+  id                          Int       @id @default(autoincrement())
+  uuid                        String    @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  createdAt                   DateTime  @default(now()) @map("created_at")
+  updatedAt                   DateTime  @default(now()) @updatedAt @map("updated_at")
+  deletedAt                   DateTime? @map("deleted_at")
+  name                        String    @db.VarChar(100)
+  kwhPerHour                  Decimal   @default(0) @map("kwh_per_hour") @db.Decimal(32, 2)
+  iceReferenceCostUsd         Decimal   @default(0) @map("ice_reference_cost_usd") @db.Decimal(32, 2)
+  iceReferenceFuelConsumption Decimal   @default(0) @map("ice_reference_fuel_consumption") @db.Decimal(32, 2)
+  iceEfficiency               Decimal   @default(0) @map("ice_efficiency") @db.Decimal(3, 2)
+  evEfficiency                Decimal   @default(0) @map("ev_efficiency") @db.Decimal(3, 2)
+  hybridEfficiency            Decimal   @default(0) @map("hybrid_efficiency") @db.Decimal(3, 2)
+
+  terminalScenarioVehicles TerminalScenarioVehicle[]
+  vehicles                 Vehicle[]
+
+  @@map("vehicle_types")
+  @@schema("et_prod")
+}
+
+model VehicleStatuses {
+  id     Int    @id @default(autoincrement())
+  uuid   String @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  status String @db.VarChar(50)
+
+  terminalVehicleStatusHour0  TerminalVehicleStatusDatapoint[] @relation("hour0Status")
+  terminalVehicleStatusHour1  TerminalVehicleStatusDatapoint[] @relation("hour1Status")
+  terminalVehicleStatusHour2  TerminalVehicleStatusDatapoint[] @relation("hour2Status")
+  terminalVehicleStatusHour3  TerminalVehicleStatusDatapoint[] @relation("hour3Status")
+  terminalVehicleStatusHour4  TerminalVehicleStatusDatapoint[] @relation("hour4Status")
+  terminalVehicleStatusHour5  TerminalVehicleStatusDatapoint[] @relation("hour5Status")
+  terminalVehicleStatusHour6  TerminalVehicleStatusDatapoint[] @relation("hour6Status")
+  terminalVehicleStatusHour7  TerminalVehicleStatusDatapoint[] @relation("hour7Status")
+  terminalVehicleStatusHour8  TerminalVehicleStatusDatapoint[] @relation("hour8Status")
+  terminalVehicleStatusHour9  TerminalVehicleStatusDatapoint[] @relation("hour9Status")
+  terminalVehicleStatusHour10 TerminalVehicleStatusDatapoint[] @relation("hour10Status")
+  terminalVehicleStatusHour11 TerminalVehicleStatusDatapoint[] @relation("hour11Status")
+  terminalVehicleStatusHour12 TerminalVehicleStatusDatapoint[] @relation("hour12Status")
+  terminalVehicleStatusHour13 TerminalVehicleStatusDatapoint[] @relation("hour13Status")
+  terminalVehicleStatusHour14 TerminalVehicleStatusDatapoint[] @relation("hour14Status")
+  terminalVehicleStatusHour15 TerminalVehicleStatusDatapoint[] @relation("hour15Status")
+  terminalVehicleStatusHour16 TerminalVehicleStatusDatapoint[] @relation("hour16Status")
+  terminalVehicleStatusHour17 TerminalVehicleStatusDatapoint[] @relation("hour17Status")
+  terminalVehicleStatusHour18 TerminalVehicleStatusDatapoint[] @relation("hour18Status")
+  terminalVehicleStatusHour19 TerminalVehicleStatusDatapoint[] @relation("hour19Status")
+  terminalVehicleStatusHour20 TerminalVehicleStatusDatapoint[] @relation("hour20Status")
+  terminalVehicleStatusHour21 TerminalVehicleStatusDatapoint[] @relation("hour21Status")
+  terminalVehicleStatusHour22 TerminalVehicleStatusDatapoint[] @relation("hour22Status")
+  terminalVehicleStatusHour23 TerminalVehicleStatusDatapoint[] @relation("hour23Status")
+
+  @@map("vehicle_statuses")
+  @@schema("et_prod")
+}
+
+model EnergyConsumptionLevel {
+  id    Int    @id @default(autoincrement())
+  uuid  String @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  level String @db.VarChar(50)
+
+  terminalScenarioVehicles TerminalScenarioVehicle[]
+
+  @@map("energy_consumption_levels")
+  @@schema("et_prod")
+}
+
+model UtilityRate {
+  id                            Int       @id @default(autoincrement())
+  uuid                          String    @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  createdAt                     DateTime  @default(now()) @map("created_at")
+  updatedAt                     DateTime  @default(now()) @updatedAt @map("updated_at")
+  deletedAt                     DateTime? @map("deleted_at")
+  utilityId                     Int?      @map("utility_id")
+  name                          String?   @db.VarChar(100)
+  organizationId                Int       @map("organization_id")
+  terminalScenarioId            Int?      @map("terminal_scenario_id")
+  peakDemandChargePricePerKw    Decimal   @default(0) @map("peak_demand_charge_price_per_kw") @db.Decimal(32, 6)
+  ppaPeakDemandChargePricePerKw Decimal   @default(0) @map("ppa_peak_demand_charge_price_per_kw") @db.Decimal(32, 6)
+
+  generationChargePricePerKwh   Decimal @default(0) @map("generation_charge_price_per_kwh") @db.Decimal(32, 6)
+  transmissionChargePricePerKwh Decimal @default(0) @map("transmission_charge_price_per_kwh") @db.Decimal(32, 6)
+  distributionChargePricePerKwh Decimal @default(0) @map("distribution_charge_price_per_kwh") @db.Decimal(32, 6)
+
+  generationDemandChargePricePerKw   Decimal @default(0) @map("generation_demand_charge_price_per_kw") @db.Decimal(32, 6)
+  transmissionDemandChargePricePerKw Decimal @default(0) @map("transmission_demand_charge_price_per_kw") @db.Decimal(32, 6)
+  distributionDemandChargePricePerKw Decimal @default(0) @map("distribution_demand_charge_price_per_kw") @db.Decimal(32, 6)
+
+  ppaGenerationChargePricePerKwh   Decimal @default(0) @map("ppa_generation_charge_price_per_kwh") @db.Decimal(32, 6)
+  ppaTransmissionChargePricePerKwh Decimal @default(0) @map("ppa_transmission_charge_price_per_kwh") @db.Decimal(32, 6)
+  ppaDistributionChargePricePerKwh Decimal @default(0) @map("ppa_distribution_charge_price_per_kwh") @db.Decimal(32, 6)
+
+  ppaGenerationDemandChargePricePerKw   Decimal @default(0) @map("ppa_generation_demand_charge_price_per_kw") @db.Decimal(32, 6)
+  ppaTransmissionDemandChargePricePerKw Decimal @default(0) @map("ppa_transmission_demand_charge_price_per_kw") @db.Decimal(32, 6)
+  ppaDistributionDemandChargePricePerKw Decimal @default(0) @map("ppa_distribution_demand_charge_price_per_kw") @db.Decimal(32, 6)
+
+  transmissionUsageKwh Decimal @default(0) @map("transmission_usage_kwh") @db.Decimal(32, 6)
+  totalUsageKwh        Decimal @default(0) @map("total_usage_kwh") @db.Decimal(32, 6)
+
+  organization     Organization      @relation(fields: [organizationId], references: [id])
+  utility          Utility?          @relation(fields: [utilityId], references: [id])
+  terminalScenario TerminalScenario? @relation("customUtilityRates", fields: [terminalScenarioId], references: [id])
+
+  terminalScenarios TerminalScenario[]
+  properties        Property[]
+
+  @@map("utility_rates")
+  @@schema("et_prod")
+}
+
+model Utility {
+  id        Int       @id @default(autoincrement())
+  uuid      String    @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @default(now()) @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+  name      String    @db.VarChar(100)
+
+  utility_rates UtilityRate[]
+
+  @@map("utilities")
+  @@schema("et_prod")
+}
+
+////////// HUB //////////
+model HubSite {
+  id              Int       @id @default(autoincrement())
+  created_at      DateTime  @default(now())
+  updated_at      DateTime  @default(now()) @updatedAt
+  deleted_at      DateTime?
+  organization_id Int
+  name            String    @db.VarChar(255)
+  address         String    @db.VarChar(255)
+  external_id     String?   @db.VarChar(255)
+  utility_id      Int?
+  highway_flow    Int       @default(0)
+  num_warehouses  Int       @default(0)
+  growth_rate     Float     @default(0)
+  lat             Float
+  lon             Float
+  locationId      Int?      @map("location_id")
+
+  location Location?   @relation(fields: [locationId], references: [id])
+  utility  HubUtility? @relation(fields: [utility_id], references: [id])
+
+  arrival_rates  HubArrivalRate[]
+  scenarios      HubScenario[]
+  site_vehicles  HubSiteVehicle[]
+  utility_rates  HubUtilityRate[]
+  fleet_arrivals HubFleetArrival[]
+
+  @@map("sites")
+  @@schema("et_hub")
+}
+
+model HubSiteVehicle {
+  id                 Int      @id @default(autoincrement())
+  created_at         DateTime @default(now())
+  updated_at         DateTime @default(now()) @updatedAt
+  site_id            Int
+  vehicle_type_id    Int
+  num_daily_arrivals Int
+  charger_id         Int?
+  charger_cost       Decimal  @default(0) @db.Decimal(32, 2)
+
+  site         HubSite        @relation(fields: [site_id], references: [id])
+  vehicle_type HubVehicleType @relation(fields: [vehicle_type_id], references: [id])
+  charger      HubCharger?    @relation(fields: [charger_id], references: [id])
+
+  @@unique([site_id, vehicle_type_id])
+  @@map("site_vehicles")
+  @@schema("et_hub")
+}
+
+model HubScenario {
+  id                   Int       @id @default(autoincrement())
+  created_at           DateTime  @default(now())
+  updated_at           DateTime  @default(now()) @updatedAt
+  deleted_at           DateTime?
+  user_id              Int
+  site_id              Int
+  name                 String    @db.VarChar(255)
+  area                 Float // total area of the site
+  year                 Int
+  trucks_parking_pct   Float     @default(0.5) // percentage of truck parking spots on site
+  trailers_parking_pct Float     @default(0.5) // percentage of trailer parking spots on site
+  nearby_parking       Int       @default(0) // parking spots found around the site (not on site)
+  num_chargers         Int       @default(0)
+  public_charger_pct   Float     @default(0.5)
+  utility_rate_id      Int?
+  parking_area         Float     @default(50000) // site area used for parking and charging
+  evGrowthScenarioId   Int?      @map("ev_growth_scenario_id")
+
+  site             HubSite           @relation(fields: [site_id], references: [id])
+  utility_rate     HubUtilityRate?   @relation(fields: [utility_rate_id], references: [id])
+  evGrowthScenario EvGrowthScenario? @relation(fields: [evGrowthScenarioId], references: [id])
+
+  scenario_years HubScenarioYear[]
+
+  // @@unique([site_id, evGrowthScenarioId]) // where deleted_at is null
+  @@map("scenarios")
+  @@schema("et_hub")
+}
+
+model HubScenarioYear {
+  id                        Int            @id @default(autoincrement())
+  created_at                DateTime       @default(now())
+  updated_at                DateTime       @default(now()) @updatedAt
+  scenario_id               Int
+  vehicle_type_id           Int
+  year                      Int
+  ev_adoption_rate          Float
+  capture_rate              Float          @default(0.25)
+  subscription_capture_rate Float          @default(0.25)
+  max_utility_supply        Float          @default(1)
+  scenario                  HubScenario    @relation(fields: [scenario_id], references: [id])
+  vehicle_type              HubVehicleType @relation(fields: [vehicle_type_id], references: [id])
+
+  @@unique([scenario_id, vehicle_type_id, year])
+  @@map("scenario_years")
+  @@schema("et_hub")
+}
+
+model HubArrivalRate {
+  id              Int      @id @default(autoincrement())
+  created_at      DateTime @default(now())
+  updated_at      DateTime @default(now()) @updatedAt
+  site_id         Int
+  vehicle_type_id Int
+  hour            Int
+  traffic_pct     Float
+  traffic_year    Int
+
+  site         HubSite        @relation(fields: [site_id], references: [id])
+  vehicle_type HubVehicleType @relation(fields: [vehicle_type_id], references: [id])
+
+  @@unique([site_id, vehicle_type_id, hour, traffic_year])
+  @@map("arrival_rates")
+  @@schema("et_hub")
+}
+
+model HubFleetArrival {
+  id              Int       @id @default(autoincrement())
+  created_at      DateTime  @default(now())
+  updated_at      DateTime  @default(now()) @updatedAt
+  deleted_at      DateTime?
+  user_id         Int?
+  site_id         Int
+  vehicle_type_id Int
+  label           String    @db.VarChar(100)
+  hour_0          Int       @default(0)
+  hour_1          Int       @default(0)
+  hour_2          Int       @default(0)
+  hour_3          Int       @default(0)
+  hour_4          Int       @default(0)
+  hour_5          Int       @default(0)
+  hour_6          Int       @default(0)
+  hour_7          Int       @default(0)
+  hour_8          Int       @default(0)
+  hour_9          Int       @default(0)
+  hour_10         Int       @default(0)
+  hour_11         Int       @default(0)
+  hour_12         Int       @default(0)
+  hour_13         Int       @default(0)
+  hour_14         Int       @default(0)
+  hour_15         Int       @default(0)
+  hour_16         Int       @default(0)
+  hour_17         Int       @default(0)
+  hour_18         Int       @default(0)
+  hour_19         Int       @default(0)
+  hour_20         Int       @default(0)
+  hour_21         Int       @default(0)
+  hour_22         Int       @default(0)
+  hour_23         Int       @default(0)
+
+  site         HubSite        @relation(fields: [site_id], references: [id])
+  vehicle_type HubVehicleType @relation(fields: [vehicle_type_id], references: [id])
+
+  @@map("fleet_arrivals")
+  @@schema("et_hub")
+}
+
+model HubVehicleType {
+  id           Int     @id @default(autoincrement())
+  type         String  @db.VarChar(100)
+  description  String? @db.VarChar(250)
+  parking_area Int
+  fraction     Float?
+  charger_id   Int?
+
+  arrival_rates  HubArrivalRate[]
+  scenario_years HubScenarioYear[]
+  site_vehicles  HubSiteVehicle[]
+  fleet_arrivals HubFleetArrival[]
+
+  charger HubCharger? @relation(fields: [charger_id], references: [id])
+
+  @@map("vehicle_types")
+  @@schema("et_hub")
+}
+
+model HubUtility {
+  id         Int       @id @default(autoincrement())
+  created_at DateTime  @default(now())
+  updated_at DateTime  @default(now()) @updatedAt
+  deleted_at DateTime?
+  name       String    @db.VarChar(255)
+
+  sites         HubSite[]
+  utility_rates HubUtilityRate[]
+
+  @@map("utilities")
+  @@schema("et_hub")
+}
+
+model HubUtilityRate {
+  id                 Int      @id @default(autoincrement())
+  created_at         DateTime @default(now())
+  updated_at         DateTime @default(now()) @updatedAt
+  site_id            Int
+  utility_id         Int
+  energy_charge_rate Float
+  demand_charge_rate Float
+
+  site    HubSite    @relation(fields: [site_id], references: [id])
+  utility HubUtility @relation(fields: [utility_id], references: [id])
+
+  scenarios HubScenario[]
+
+  @@map("utility_rates")
+  @@schema("et_hub")
+}
+
+model HubCharger {
+  id             Int       @id @default(autoincrement())
+  created_at     DateTime  @default(now())
+  updated_at     DateTime  @default(now())
+  deleted_at     DateTime?
+  name           String    @db.VarChar(50)
+  make           String    @db.VarChar(50)
+  model          String    @db.VarChar(50)
+  charge_rate_kw Decimal   @db.Decimal(32, 2)
+  voltage        Decimal   @db.Decimal(32, 2)
+  amperage       Decimal   @db.Decimal(32, 2)
+  price          Decimal   @db.Decimal(32, 2)
+
+  site_vehicles HubSiteVehicle[]
+  vehicle_types HubVehicleType[]
+
+  @@map("chargers")
+  @@schema("et_hub")
+}
+
+view VHubTimelineLinkageScenario {
+  id             Int    @id
+  name           String
+  description    String
+  organizationId Int    @map("organization_id")
+  location       String
+
+  @@map("v_hub_timeline_linkage_scenarios")
+  @@schema("et_prod")
+}
+
+view VHubTimelineLinkageAnnualData {
+  id                 Int     @id
+  evGrowthScenarioId Int     @map("ev_growth_scenario_id")
+  vehicleClassId     Int     @map("vehicle_class_id")
+  year               Int
+  evPenetrationRate  Decimal @map("ev_penetration_rate") @db.Decimal(5, 4)
+
+  @@map("v_hub_timeline_linkage_annual_data")
+  @@schema("et_prod")
+}
+
+////////// AUTH //////////
+
+model Organization {
+  id        Int       @id @default(autoincrement())
+  name      String
+  createdTs DateTime  @map("created_ts")
+  updatedTs DateTime? @map("updated_ts")
+  createdBy String    @map("created_by")
+  updatedBy String?   @map("updated_by")
+  active    Boolean   @default(true)
+
+  chargers     Charger[]
+  vehicles     Vehicle[]
+  utilityRates UtilityRate[]
+
+  @@map("organization")
+  @@schema("et_auth")
+}
+
+////////// ENUMS //////////
+
+enum EngineType {
+  ELECTRIC
+  ICE
+  HYBRID
+
+  @@map("engine_type")
+  @@schema("et_prod")
+}

@@ -1,0 +1,59 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  Get Traffic Model Download URL
+
+  Sample SAM Template for node-deployment
+
+Parameters:
+  ApiId:
+    Description: Api Id
+    Type: String
+    Default: emdg130kk9
+
+# More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
+Globals:
+  Function:
+    Timeout: 10
+
+Resources:
+  getTrafficModels:
+    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+    Properties:
+      FunctionName: "getTrafficModels"
+      Description: "Get Traffic Models " 
+      CodeUri: getTrafficModels/index.js
+      Handler: index.handler
+      Runtime: nodejs14.x
+      MemorySize: 128
+      "Role" : { "Fn::Sub" : "arn:aws:iam::${AWS::AccountId}:role/lambda-execution-role" }
+      Architectures:
+        - x86_64
+      Environment:
+        Variables:
+          DATABASE: "postgres"  
+          SCHEMA: "tti" 
+          DB_CREDENTIALS_SECRET_NAME: "postgres_user_tti_manager"           
+      VpcConfig:
+        SubnetIds:
+          - subnet-09af6d9e61e544338 
+        SecurityGroupIds:
+          - sg-03381770ca27e5080 
+      Layers:
+          - !Sub "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:layer:electrotempo-auth:2"
+          - !Sub "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:layer:serverless-postgres:2"
+
+  getTrafficModelsPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: "lambda:InvokeFunction"
+      FunctionName:
+        Fn::GetAtt:
+        - getTrafficModels
+        - Arn
+      Principal: "apigateway.amazonaws.com"
+      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${ApiId}/*/GET/traffic-model"
+
+     
+ 
+

@@ -1,0 +1,62 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  SAM Template for Nested application resources
+Resources:
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  SAM Template for Nested application resources
+Resources:
+    completeCustomerTrafficModelUpload:
+      Type: AWS::Serverless::Application
+      Properties:
+        Location: D:\WorkFolder\git\charging-demand-dashboard\aws\lambdas\completeCustomerTrafficModelUpload\completeCustomerTrafficModelUpload_dev.yaml
+        Parameters:
+          ApiId: emdg130kk9
+
+    getCustomerTrafficModelUploadEndpoint:
+      Type: AWS::Serverless::Application
+      Properties:
+        Location: D:\WorkFolder\git\charging-demand-dashboard\aws\lambdas\getCustomerTrafficModelUploadEndpoint\getCustomerTrafficModelUploadEndpoint_dev.yaml
+        Parameters:
+          ApiId: emdg130kk9
+
+    getTrafficModels:
+      Type: AWS::Serverless::Application
+      Properties:
+        Location: D:\WorkFolder\git\charging-demand-dashboard\aws\lambdas\getTrafficModels\getTrafficModels_dev.yaml
+        Parameters:
+          ApiId: emdg130kk9
+
+    updateTrafficModel:
+      Type: AWS::Serverless::Application
+      Properties:
+        Location: D:\WorkFolder\git\charging-demand-dashboard\aws\lambdas\updateTrafficModel\updateTrafficModel_dev.yaml 
+        Parameters:
+          ApiId: emdg130kk9
+
+    getTrafficModelDownloadURL:
+      Type: AWS::Serverless::Application
+      Properties:
+        Location: D:\WorkFolder\git\charging-demand-dashboard\aws\lambdas\getTrafficModelDownloadURL\getTrafficModelDownloadURL_dev.yaml        
+        Parameters:
+          ApiId: emdg130kk9
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+     
+ 
+

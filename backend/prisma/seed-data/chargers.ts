@@ -1,0 +1,38 @@
+export const chargers = [
+  {
+    name: "Wall Connector",
+    make: "TESLA",
+    model: "Wall Connector",
+    chargeRateKw: 11.50,
+    voltage: 240,
+    amperage: 48,
+    priceUsd: 475,
+  },
+  {
+    name: "ACCESS CHARGER",
+    make: "ECOTEC",
+    model: "24-255-30",
+    chargeRateKw: 50,
+    voltage: 480,
+    amperage: 42,
+    priceUsd: 1582,
+  },
+  {
+    name: "Troniq Modular Double cable",
+    make: "EVBox",
+    model: "Troniq Modular",
+    chargeRateKw: 210,
+    voltage: 920,
+    amperage: 250,
+    priceUsd: 30000,
+  },
+  {
+    name: "Express Plus Power Link 2000",
+    make: "CHARGEPOINT",
+    model: "Express Plus",
+    chargeRateKw: 500,
+    voltage: 1000,
+    amperage: 500,
+    priceUsd: 35800,
+  },
+];

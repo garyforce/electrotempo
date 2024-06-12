@@ -1,0 +1,4 @@
+bevName,totalRangeMiles,batteryCapacityKWh,marketFraction
+BEV100,100,30.4,0.0375
+BEV200,200,60.0,0.0195
+BEV300,300,101.2,0.093

@@ -1,0 +1,75 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  SAM Template for Nested application resources
+Resources:
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  SAM Template for Nested application resources
+Resources:
+    completeCustomerTrafficModelUpload:
+      Type: AWS::Serverless::Application
+      Properties:
+        Location: D:\WorkFolder\git\charging-demand-dashboard\aws\lambdas\completeCustomerTrafficModelUpload\completeCustomerTrafficModelUpload_prod.yaml
+        Parameters:
+          ApiId: aq93d0b8v9
+
+    getCustomerTrafficModelUploadEndpoint:
+      Type: AWS::Serverless::Application
+      Properties:
+        Location: D:\WorkFolder\git\charging-demand-dashboard\aws\lambdas\getCustomerTrafficModelUploadEndpoint\getCustomerTrafficModelUploadEndpoint_prod.yaml
+        Parameters:
+          ApiId: aq93d0b8v9
+
+    getTrafficModelDownloadURL:
+      Type: AWS::Serverless::Application
+      Properties:
+        Location: D:\WorkFolder\git\charging-demand-dashboard\aws\lambdas\getTrafficModelDownloadURL\getTrafficModelDownloadURL_prod.yaml        
+        Parameters:
+          ApiId: aq93d0b8v9
+
+    getTrafficModels:
+      Type: AWS::Serverless::Application
+      Properties:
+        Location: D:\WorkFolder\git\charging-demand-dashboard\aws\lambdas\getTrafficModels\getTrafficModels_prod.yaml
+        Parameters:
+          ApiId: aq93d0b8v9
+
+    insertNewTrafficModel:
+      Type: AWS::Serverless::Application
+      Properties:
+        Location: D:\WorkFolder\git\charging-demand-dashboard\aws\lambdas\insertNewTrafficModel\insertNewTrafficModel_prod.yaml
+        Parameters:
+          ApiId: aq93d0b8v9
+
+    updateTrafficModel:
+      Type: AWS::Serverless::Application
+      Properties:
+        Location: D:\WorkFolder\git\charging-demand-dashboard\aws\lambdas\updateTrafficModel\updateTrafficModel_prod.yaml 
+        Parameters:
+          ApiId: aq93d0b8v9
+
+    jwtRsaCustomAuthorizer:
+      Type: AWS::Serverless::Application
+      Properties:
+        Location: D:\WorkFolder\git\charging-demand-dashboard\aws\lambdas\jwtRsaCustomAuthorizer\jwtRsaCustomAuthorizer_prod.yaml 
+        Parameters:
+          ApiId: aq93d0b8v9
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+     
+ 
+

@@ -1,0 +1,91 @@
+/* Polka Dot CSS for demographic legends.
+ * It does some weird stuff, so careful changing them. They're manually tuned,
+ * and not conducive to smart generation.
+ */
+
+.poverty-legend-key-1 {
+    background-image: radial-gradient(blue 1px, transparent 2px);
+    background-position: -2px -2px;
+    background-size: 11px 11px;
+    border: 1px solid black;
+}
+
+.poverty-legend-key-2 {
+    background-image: radial-gradient(blue 1px, transparent 2px);
+    background-position: 0px 0px;
+    background-size: 6px 6px;
+    border: 1px solid black;
+}
+
+.poverty-legend-key-3 {
+    background-image: radial-gradient(blue 1px, transparent 1.5px);
+    background-position: 1px 1px;
+    background-size: 4px 4px;
+    border: 1px solid black;
+}
+
+.poverty-legend-key-4 {
+    /* color order swapped in gradient, it looks better */
+    background-image: radial-gradient(transparent 1px, blue 1.5px);
+    background-position: 0px 0px;
+    background-size: 3px 3px;
+    border: 1px solid black;
+}
+
+.nonwhite-legend-key-1 {
+    background-image: radial-gradient(green 1px, transparent 2px);
+    background-position: -2px -2px;
+    background-size: 11px 11px;
+    border: 1px solid black;
+}
+
+.nonwhite-legend-key-2 {
+    background-image: radial-gradient(green 1px, transparent 2px);
+    background-position: 0px 0px;
+    background-size: 6px 6px;
+    border: 1px solid black;
+}
+
+.nonwhite-legend-key-3 {
+    background-image: radial-gradient(green 1px, transparent 1.5px);
+    background-position: 1px 1px;
+    background-size: 4px 4px;
+    border: 1px solid black;
+}
+
+.nonwhite-legend-key-4 {
+    /* As above, color order swapped in gradient */
+    background-image: radial-gradient(transparent 1px, green 1.5px);
+    background-position: 0px 0px;
+    background-size: 3px 3px;
+    border: 1px solid black;
+}
+
+.multifamily-legend-key-1 {
+    background-image: radial-gradient(red 1px, transparent 2px);
+    background-position: -2px -2px;
+    background-size: 11px 11px;
+    border: 1px solid black;
+}
+
+.multifamily-legend-key-2 {
+    background-image: radial-gradient(red 1px, transparent 2px);
+    background-position: 0px 0px;
+    background-size: 6px 6px;
+    border: 1px solid black;
+}
+
+.multifamily-legend-key-3 {
+    background-image: radial-gradient(red 1px, transparent 1.5px);
+    background-position: 1px 1px;
+    background-size: 4px 4px;
+    border: 1px solid black;
+}
+
+.multifamily-legend-key-4 {
+    /* As above, color order swapped in gradient */
+    background-image: radial-gradient(transparent 1px, red 1.5px);
+    background-position: 0px 0px;
+    background-size: 3px 3px;
+    border: 1px solid black;
+}

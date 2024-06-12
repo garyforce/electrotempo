@@ -1,0 +1,15 @@
+blockgroups: /data/Census/tl_2019_48_bg.zip
+nodes: /data/DynusT/Networks/HOU2014_8county_base_nodes.geojson.gz
+datadirectory: ../Houston_Uniform_Plus_Office
+locationcode: HOU
+demand: combinedDemand.csv.gz
+demandcolumns: [homeDemand,publicDemand,officeDemand]
+attribcolumns: [AC,marketFraction,hourID]
+numcpu: 32
+blockgroupdemand: demandByBlockGroup.csv.gz
+demandtypes:
+  publicDemand: 1
+  homeDemand: 2
+  officeDemand: 3
+scenarioid: 1
+  

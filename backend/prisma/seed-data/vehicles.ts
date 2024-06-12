@@ -1,0 +1,50 @@
+import { EngineType } from "@prisma/client";
+
+export const vehicles = [
+  {
+    name: "HYSTER J80XN",
+    make: "HYSTER",
+    model: "J80XN",
+    vehicleTypeId: 1,
+    batteryCapacityKwh: 30.2,
+    batteryMaxChargeRateKw: 26.4,
+    priceUsd: 110000,
+    isEV: true,
+    engineType: EngineType.ELECTRIC,
+  },
+  {
+    name: "LONESTAR S12",
+    make: "LONESTAR",
+    model: "S12",
+    vehicleTypeId: 2,
+    batteryCapacityKwh: 112.0,
+    batteryMaxChargeRateKw: 56,
+    priceUsd: 120000,
+    isEV: true,
+    engineType: EngineType.ELECTRIC,
+  },
+  {
+    name: "ICE Vehicle 1",
+    make: "TESTER",
+    model: "TESTER 1",
+    vehicleTypeId: 1,
+    isEV: false,
+    engineType: EngineType.ICE,
+  },
+  {
+    name: "ICE Vehicle 2",
+    make: "TESTER",
+    model: "TESTER 2",
+    vehicleTypeId: 2,
+    isEV: false,
+    engineType: EngineType.ICE,
+  },
+  {
+    name: "Hybrid Vehicle",
+    make: "HYBRID",
+    model: "HYBRID 1",
+    vehicleTypeId: 1,
+    isEV: false,
+    engineType: EngineType.HYBRID,
+  },
+];

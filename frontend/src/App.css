@@ -1,0 +1,121 @@
+:root {
+  --et-blue: #05c2cc;
+  --et-yellow: #fdbe02;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@400&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@500&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@700&display=swap");
+
+html,
+body {
+  height: 100%;
+}
+
+#wrapper {
+  height: 100vh;
+  overflow: hidden;
+}
+
+.header {
+  position: relative;
+  /* give a position so that it has a z-index and doesn't get shadowed */
+  z-index: 100;
+  align-items: center;
+  background: var(--et-blue);
+  display: flex;
+  justify-content: space-between;
+  font-size: 18px;
+  font-family: "Montserrat", sans-serif;
+  color: #fff;
+  height: 64px;
+  /* UPDATE #content.height IF THIS IS CHANGED */
+}
+
+.logo {
+  max-width: 200px;
+  padding: 1em;
+}
+
+#content {
+  /* Stupid CSS and Leaflet interactions causing a scrollbar to appear (or Leaflet
+     * to not. The intent of this is calc(100% - var(--header-height)), but that
+     * doesn't seem to work, so here we are. */
+  height: calc(100% - 64px);
+  display: flex;
+}
+
+.tab-list {
+  position: relative;
+  z-index: 50;
+  background: white;
+  /* required so this doesn't get shadowed */
+  box-shadow: 0px 0px 10px 2px rgba(0, 0, 0, 0.2);
+  min-width: 100px;
+  width: 100px;
+}
+
+#map {
+  height: 100%;
+  width: 100%;
+}
+
+.info {
+  padding: 6px 8px;
+  font: 14px/16px Arial, Helvetica, sans-serif;
+  background: rgba(211, 211, 211, 0.8);
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+  border-radius: 5px;
+}
+
+.info h4,
+h5 {
+  margin: 0 0 5px;
+  color: #777;
+  text-align: center;
+}
+
+.legend {
+  text-align: left;
+  line-height: 18px;
+  color: #555;
+}
+
+.legend i {
+  width: 18px;
+  height: 18px;
+  float: left;
+  margin-right: 8px;
+  margin-left: 0px;
+  opacity: 0.7;
+}
+
+.marker-cluster-small,
+.marker-cluster-medium,
+.marker-cluster-large {
+  /* !important is necessary to override the leaflet defaults */
+  background-color: #943b8466 !important;
+}
+
+.marker-cluster-small div,
+.marker-cluster-medium div,
+.marker-cluster-large div {
+  /* !important is necessary to override the leaflet defaults */
+  background-color: #943b84 !important;
+}
+
+.marker-cluster-small div span,
+.marker-cluster-medium div span,
+.marker-cluster-large div span {
+  color: white;
+}
+
+.multiLabelSlider > .MuiSlider-markLabel {
+  transform: rotate(-50deg)  translateX(-25px) translateY(-25px);
+}
